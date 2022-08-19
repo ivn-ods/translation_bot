@@ -6,11 +6,11 @@ public class GoogleResponse {
 
     public Data data;
 
-    public static class Data{
+    public static class Data {
         public ArrayList<Translation> translations;
     }
 
-    public static class Translation{
+    public static class Translation {
         public String translatedText;
         public String detectedSourceLanguage;
     }

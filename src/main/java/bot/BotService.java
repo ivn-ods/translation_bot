@@ -17,13 +17,16 @@ import java.util.OptionalDouble;
 @Service
 public class BotService {
     @Value("${telegram_url}")
-    private   String telegramURL;
+    private String telegramURL;
 
     @Value("${google_url}")
-    private   String googleURL;
+    private String googleURL;
 
     @Value("${google_key}")
-    private   String googleKey;
+    private String googleKey;
+
+    @Value("${request_interval}")
+    private String requestInterval;
 
     private final WebClient webClient;
     private static final Logger logger = LoggerFactory.getLogger(Controller.class);
@@ -83,37 +86,33 @@ public class BotService {
                 .average();
         if (averageSymbol.isPresent()) {
             return averageSymbol.getAsDouble() < 500;
-        }
-        else return true;
+        } else return true;
     }
 
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedDelayString = "${request_interval}", initialDelay = 10000)
     public void checkForNewRequests() {
         try {
-            UpdateResponse updateResponse = this.getMessagesFromTelegram(this.offset+1);
+            UpdateResponse updateResponse = this.getMessagesFromTelegram(this.offset + 1);
             for (UpdateResponse.Result result : updateResponse.result) {
                 String message = result.message.text;
                 int chat = result.message.chat.id;
                 this.offset = result.update_id;
-                String language = isGerman(message) ? "uk"  :  "de";
+                String language = isGerman(message) ? "uk" : "de";
                 try {
                     GoogleResponse googleResponse = getTranslationFromGoogle(message, language);
                     try {
                         sendMessage(googleResponse.data.translations.get(0).translatedText, chat);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         logger.warn("Error during reply to Telegram" + e.getMessage());
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.warn("Error during request to geoogle" + e.getMessage());
                 }
                 // System.out.println("message sent: " + message);
 
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.warn("Error during check for updates to Telegram" + e.getMessage());
         }
 
